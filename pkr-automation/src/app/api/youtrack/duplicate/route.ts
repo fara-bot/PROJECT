@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { decrypt } from '@/lib/crypto';
 
-const dbPath = path.join(process.cwd(), 'db.json');
-
-async function readDb() {
-  try {
-    const data = await fs.readFile(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { configurations: [], ticket_links: [] };
-  }
-}
-
-async function writeDb(data: any) {
-  await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf8');
-}
+import { inMemoryTicketLinks } from '@/lib/inMemoryStore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,12 +10,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ticket ID, destination project, and title are required' }, { status: 400 });
     }
 
-    const db = await readDb();
     // Simulate YouTrack ticket creation for local testing
     const newTicketId = `${destinationProjectId}-${Math.floor(Math.random() * 10000)}`;
 
-    // Save the link and details in our local db file
-    db.ticket_links.push({
+    // Save the link and details in our in-memory store
+    inMemoryTicketLinks.push({
       source_ticket_id: sourceTicketId,
       destination_ticket_id: newTicketId,
       title: customTitle,
@@ -39,7 +23,6 @@ export async function POST(request: NextRequest) {
       storyPoints: storyPoints || '',
       type: typeId || '',
     });
-    await writeDb(db);
 
     return NextResponse.json({ newTicketId: newTicketId });
 
