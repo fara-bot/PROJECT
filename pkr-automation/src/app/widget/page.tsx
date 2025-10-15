@@ -196,7 +196,7 @@ function WidgetContent() {
 
           <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
 
-          <div style={{ spaceY: '12px' }}>
+          <div>
             <div style={{ marginBottom: '12px' }}>
               <label htmlFor="type-select" style={labelStyle}>Type</label>
               <select id="type-select" value={type} onChange={(e) => setType(e.target.value)} style={inputStyle}>
