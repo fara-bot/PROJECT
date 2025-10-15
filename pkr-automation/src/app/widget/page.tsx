@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, CSSProperties } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 const mockBoards = [
@@ -122,7 +122,7 @@ function WidgetContent() {
   };
 
   const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '4px' };
-  const inputStyle = { width: '100%', padding: '4px', border: '1px solid #ccc', boxSizing: 'border-box' };
+  const inputStyle: CSSProperties = { width: '100%', padding: '4px', border: '1px solid #ccc', boxSizing: 'border-box' };
 
   return (
     <div style={{ backgroundColor: '#fbfbfb', padding: '12px', fontFamily: 'sans-serif' }}>
