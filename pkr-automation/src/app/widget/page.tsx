@@ -173,11 +173,7 @@ function WidgetContent() {
           <label htmlFor="desc-input" style={{ ...labelStyle, marginTop: '12px' }}>Description</label>
           <textarea id="desc-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={8} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Write the description..." />
 
-          {/* New Save/Cancel Buttons */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-            <button onClick={handleSync} style={{ flex: 1, padding: '8px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Save</button>
-            <button onClick={handleCancel} style={{ flex: 1, padding: '8px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
-          </div>
+
         </div>
 
         {/* Right Column */}
@@ -217,6 +213,12 @@ function WidgetContent() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* New Save/Cancel Buttons */}
+      <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'center' }}>
+        <button onClick={handleSync} style={{ padding: '8px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '120px' }}>Save</button>
+        <button onClick={handleCancel} style={{ padding: '8px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '120px' }}>Cancel</button>
       </div>
 
       {(status !== 'idle') && <div style={{ marginTop: '12px', color: status === 'error' ? 'red' : 'inherit' }}><p>{feedback}</p></div>}
