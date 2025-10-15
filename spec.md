@@ -1,6 +1,6 @@
 # Project Specification
 
-## 1. Background & Problem
+## 1. Background & Problems
 **What's the problem?** Submitting tickets for PKR takes too much time since tickets must be created on one board for developers and then added again to another board for PKR submission.
 
 **Who has this problem?** All product managers
