@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, CSSProperties } from 'react';
+import { useState, useEffect, Suspense, CSSProperties, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 const mockBoards = [
@@ -19,6 +19,33 @@ const mockTypes = [
   { id: 'task', name: 'Task' },
 ];
 
+function SuccessPopup({ message, onClose, title, ticketNumber, newTicketId }: { message: string, onClose: () => void, title: string, ticketNumber: string, newTicketId: string }) {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '10px', textAlign: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ fontSize: '48px', color: 'green' }}>✓</div>
+        <h2 style={{ marginTop: '20px', fontSize: '24px', fontWeight: 'bold' }}>{message}</h2>
+        <p style={{ marginTop: '10px', fontSize: '16px', color: '#666' }}>Your ticket has been mirrored to the Discoveries board for PKR tracking.</p>
+        
+        <div style={{ display: 'block', marginTop: '20px' }}>
+          <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>Original Ticket (Current Board)</h3>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>{title}</p>
+            <p style={{ margin: '5px 0 0', color: '#666' }}>{ticketNumber}</p>
+          </div>
+          <div style={{ marginTop: '10px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>New Mirrored Ticket</h3>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>{title}</p>
+            <p style={{ margin: '5px 0 0', color: '#666' }}>{newTicketId}</p>
+          </div>
+        </div>
+
+        <button onClick={onClose} style={{ marginTop: '30px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
 function WidgetContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -35,10 +62,49 @@ function WidgetContent() {
   const [type, setType] = useState('');
   const [status, setStatus] = useState('idle');
   const [feedback, setFeedback] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [newTicketId, setNewTicketId] = useState('');
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const debounce = (func: (...args: any[]) => void, delay: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  const fetchTicketDetails = async (id: string) => {
+    if (id) {
+      try {
+        const response = await fetch(`/api/youtrack/ticket-details?ticketId=${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTitle(data.title || '');
+          setDescription(data.description || '');
+          setFeedback('');
+        } else {
+          const errorData = await response.json();
+          setFeedback(`Error fetching ticket details: ${errorData.error}`);
+          setTitle('');
+          setDescription('');
+        }
+      } catch (err: any) {
+        setFeedback(`Error fetching ticket details: ${err.message}`);
+        setTitle('');
+        setDescription('');
+      }
+    } else {
+      setTitle('');
+      setDescription('');
+      setFeedback('');
+    }
+  };
+
+  const debouncedFetchTicketDetails = useCallback(debounce(fetchTicketDetails, 500), []);
 
   const handleSync = async () => {
     const finalSourceTicketId = ticketNumber || issueIdFromUrl; // Use input field value or URL param
@@ -101,8 +167,8 @@ function WidgetContent() {
 
       setStatus('synced');
       setFeedback(`Synced as ${data.newTicketId}`);
-      handleCancel(); // Clear form after successful sync
-      router.push('/synced-tickets'); // Redirect to synced-tickets page
+      setNewTicketId(data.newTicketId);
+      setShowSuccessPopup(true);
     } catch (err: any) {
       setStatus('error');
       setFeedback(err.message);
@@ -121,111 +187,98 @@ function WidgetContent() {
     setFeedback('');
   };
 
+  const handleClosePopup = () => {
+    setShowSuccessPopup(false);
+    handleCancel(); // Clear form after successful sync
+    router.push('/synced-tickets'); // Redirect to synced-tickets page
+  };
+
   const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '4px' };
-  const inputStyle: CSSProperties = { width: '100%', padding: '4px', border: '1px solid #ccc', boxSizing: 'border-box' };
+  const inputStyle: CSSProperties = { width: '100%', padding: '8px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '16px', backgroundColor: '#f0f0f0', borderRadius: '4px' };
 
   return (
-    <div style={{ backgroundColor: '#fbfbfb', padding: '12px', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', gap: '16px' }}>
-        
-        {/* Left Column */}
-        <div style={{ flex: 2 }}>
-          <h4 style={{ margin: '0 0 12px 0', fontWeight: '600' }}>New Ticket Details</h4>
-          <label htmlFor="ticket-number-input" style={labelStyle}>Source Ticket ID</label>
-          <input
-            id="ticket-number-input"
-            type="text"
-            value={ticketNumber}
-            onChange={async (e) => {
-              const id = e.target.value;
-              setTicketNumber(id);
-              if (id) {
-                try {
-                  const response = await fetch(`/api/youtrack/ticket-details?ticketId=${id}`);
-                  if (response.ok) {
-                    const data = await response.json();
-                    setTitle(data.title || '');
-                    setDescription(data.description || '');
-                    setFeedback('');
-                  } else {
-                    const errorData = await response.json();
-                    setFeedback(`Error fetching ticket details: ${errorData.error}`);
-                    setTitle('');
-                    setDescription('');
-                  }
-                } catch (err: any) {
-                  setFeedback(`Error fetching ticket details: ${err.message}`);
-                  setTitle('');
-                  setDescription('');
-                }
-              } else {
-                setTitle('');
-                setDescription('');
-                setFeedback('');
-              }
-            }}
-            style={inputStyle}
-            placeholder="Enter source ticket ID (e.g., JW-123)"
-          />
-          <label htmlFor="title-input" style={labelStyle}>Title</label>
-          <input id="title-input" type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} placeholder="Write the title..." />
+    <>
+      {showSuccessPopup && <SuccessPopup message="Ticket Synced Successfully" onClose={handleClosePopup} title={title} ticketNumber={ticketNumber} newTicketId={newTicketId} />}
+      <div style={{ backgroundColor: '#fbfbfb', padding: '12px', fontFamily: 'sans-serif' }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          
+          {/* Left Column */}
+          <div style={{ flex: 2 }}>
+            <h4 style={{ margin: '0 0 12px 0', fontWeight: '600' }}>New Ticket Details</h4>
+            <label htmlFor="ticket-number-input" style={labelStyle}>Source Ticket ID</label>
+            <input
+              id="ticket-number-input"
+              type="text"
+              value={ticketNumber}
+              onChange={(e) => {
+                const id = e.target.value;
+                setTicketNumber(id);
+                debouncedFetchTicketDetails(id);
+              }}
+              style={inputStyle}
+              placeholder="Enter source ticket ID (e.g., JW-123)"
+            />
+            <label htmlFor="title-input" style={labelStyle}>Title</label>
+            <input id="title-input" type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} placeholder="Write the title..." />
 
-          <label htmlFor="desc-input" style={{ ...labelStyle, marginTop: '12px' }}>Description</label>
-          <textarea id="desc-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={8} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Write the description..." />
+            <label htmlFor="desc-input" style={{ ...labelStyle, marginTop: '12px' }}>Description</label>
+            <textarea id="desc-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={8} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Write the description..." />
 
-
-        </div>
-
-        {/* Right Column */}
-        <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: '16px' }}>
-            <h4 style={{ margin: '0 0 4px 0', fontWeight: '600' }}>Auto-Sync to Discoveries</h4>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px' }}>
-                    <input type="checkbox" checked={syncToDiscoveries} onChange={() => setSyncToDiscoveries(!syncToDiscoveries)} style={{ opacity: 0, width: 0, height: 0 }} />
-                    <span style={{ position: 'absolute', cursor: 'pointer', top: '0', left: '0', right: '0', bottom: '0', backgroundColor: syncToDiscoveries ? '#2563eb' : '#ccc', transition: '.4s', borderRadius: '20px' }}><span style={{ position: 'absolute', content: '""', height: '12px', width: '12px', left: '4px', bottom: '4px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%', transform: syncToDiscoveries ? 'translateX(20px)' : 'translateX(0)' }}></span></span>
-                </label>
-                <span>{syncToDiscoveries ? 'Sync on' : 'Sync off'}</span>
-            </div>
 
           </div>
 
-          <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+          {/* Right Column */}
+          <div style={{ flex: 1 }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h4 style={{ margin: '0 0 4px 0', fontWeight: '600' }}>Auto-Sync to Discoveries</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px' }}>
+                      <input type="checkbox" checked={syncToDiscoveries} onChange={() => setSyncToDiscoveries(!syncToDiscoveries)} style={{ opacity: 0, width: 0, height: 0 }} />
+                      <span style={{ position: 'absolute', cursor: 'pointer', top: '0', left: '0', right: '0', bottom: '0', backgroundColor: syncToDiscoveries ? '#2563eb' : '#ccc', transition: '.4s', borderRadius: '20px' }}><span style={{ position: 'absolute', content: '""', height: '12px', width: '12px', left: '4px', bottom: '4px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%', transform: syncToDiscoveries ? 'translateX(20px)' : 'translateX(0)' }}></span></span>
+                  </label>
+                  <span>{syncToDiscoveries ? 'Sync on' : 'Sync off'}</span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0' }}>Required for PKR submission progress count. Automatically creates a mirrored ticket.</p>
 
-          <div>
-            <div style={{ marginBottom: '12px' }}>
-              <label htmlFor="type-select" style={labelStyle}>Type</label>
-              <select id="type-select" value={type} onChange={(e) => setType(e.target.value)} style={inputStyle}>
-                <option value="">Select Type...</option>
-                {mockTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
             </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label htmlFor="assignee-select" style={labelStyle}>Assignee</label>
-              <select id="assignee-select" value={assignee} onChange={(e) => setAssignee(e.target.value)} style={inputStyle}>
-                <option value="">Unassigned</option>
-                {mockUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
+
+            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+
             <div>
-              <label htmlFor="sp-input" style={labelStyle}>Story Points</label>
-              <input id="sp-input" type="number" value={storyPoints} onChange={(e) => setStoryPoints(e.target.value)} style={inputStyle} />
+              <div style={{ marginBottom: '12px' }}>
+                <label htmlFor="type-select" style={labelStyle}>Type</label>
+                <select id="type-select" value={type} onChange={(e) => setType(e.target.value)} style={inputStyle}>
+                  <option value="">Select Type...</option>
+                  {mockTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label htmlFor="assignee-select" style={labelStyle}>Assignee</label>
+                <select id="assignee-select" value={assignee} onChange={(e) => setAssignee(e.target.value)} style={inputStyle}>
+                  <option value="">Unassigned</option>
+                  {mockUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="sp-input" style={labelStyle}>Story Points</label>
+                <input id="sp-input" type="number" value={storyPoints} onChange={(e) => setStoryPoints(e.target.value)} style={inputStyle} />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* New Save/Cancel Buttons */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'center' }}>
+          <button onClick={handleSync} style={{ padding: '8px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '120px' }}>Save</button>
+          <button onClick={handleCancel} style={{ padding: '8px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '120px' }}>Cancel</button>
+        </div>
+
+        {(status !== 'idle') && <div style={{ marginTop: '12px', color: status === 'error' ? 'red' : 'inherit' }}><p>{feedback}</p></div>}
+        
+        {/* Removed Current Ticket Info */}
+
       </div>
-
-      {/* New Save/Cancel Buttons */}
-      <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'center' }}>
-        <button onClick={handleSync} style={{ padding: '8px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '120px' }}>Save</button>
-        <button onClick={handleCancel} style={{ padding: '8px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '120px' }}>Cancel</button>
-      </div>
-
-      {(status !== 'idle') && <div style={{ marginTop: '12px', color: status === 'error' ? 'red' : 'inherit' }}><p>{feedback}</p></div>}
-      
-      {/* Removed Current Ticket Info */}
-
-    </div>
+    </>
   );
 }
 

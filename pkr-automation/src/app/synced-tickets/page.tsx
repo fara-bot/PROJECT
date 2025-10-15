@@ -118,7 +118,7 @@ export default function SyncedTicketsPage() {
                   style={{ marginBottom: '10px', border: '1px solid #e0e0e0', padding: '10px', borderRadius: '5px', backgroundColor: '#fff', cursor: 'pointer' }}
                   onClick={() => handleTicketClick(link)}
                 >
-                  <p style={{ margin: 0 }}>DIS-{link.destination_ticket_id}</p>
+                  <p style={{ margin: 0 }}>{link.destination_ticket_id}</p>
                 </li>
               ))}
             </ul>

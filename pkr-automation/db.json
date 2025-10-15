@@ -10,54 +10,8 @@
   ],
   "ticket_links": [
     {
-      "source_ticket_id": "PKR-123",
-      "destination_ticket_id": "SIM-5670",
-      "title": "test 11",
-      "description": "test",
-      "storyPoints": "1"
-    },
-    {
-      "source_ticket_id": "PKR-123",
-      "destination_ticket_id": "SIM-9247",
-      "title": "test2",
-      "description": "test2",
-      "assignee": "harry-p",
-      "storyPoints": 2,
-      "type": "user-story"
-    },
-    {
-      "source_ticket_id": "PROJ-123",
-      "destination_ticket_id": "SIM-4447",
-      "title": "test show desi",
-      "description": "test test tesjsvnsz;onv",
-      "assignee": "harry-p",
-      "storyPoints": 1,
-      "type": "user-story"
-    },
-    {
-      "source_ticket_id": "PROJ-123",
-      "destination_ticket_id": "SIM-4447",
-      "title": "test show desi",
-      "description": "test test tes",
-      "assignee": "harry-p",
-      "storyPoints": 1,
-      "type": "user-story"
-    },
-    {
       "source_ticket_id": "JW-12508",
-      "configuration_id": 1
-    },
-    {
-      "source_ticket_id": "JW-12508",
-      "configuration_id": 1
-    },
-    {
-      "source_ticket_id": "JW-12508",
-      "configuration_id": 1
-    },
-    {
-      "source_ticket_id": "JW-12508",
-      "destination_ticket_id": "DIS-SIM-2370",
+      "destination_ticket_id": "DIS-7038",
       "title": "Simulated Title for JW-12508",
       "description": "This is a simulated description for ticket JW-12508. This data is not from YouTrack production.",
       "assignee": "",
@@ -66,21 +20,12 @@
     },
     {
       "source_ticket_id": "JW-12508",
-      "destination_ticket_id": "DIS-SIM-9737",
+      "destination_ticket_id": "DIS-1619",
       "title": "Simulated Title for JW-12508",
       "description": "This is a simulated description for ticket JW-12508. This data is not from YouTrack production.",
-      "assignee": "",
+      "assignee": "harry-p",
       "storyPoints": "",
-      "type": ""
-    },
-    {
-      "source_ticket_id": "JW-12508",
-      "destination_ticket_id": "DIS-SIM-7789",
-      "title": "Simulated Title for JW-12508",
-      "description": "This is a simulated description for ticket JW-12508. This data is not from YouTrack production.",
-      "assignee": "",
-      "storyPoints": "",
-      "type": ""
+      "type": "user-story"
     }
   ]
 }

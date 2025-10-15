@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const db = await readDb();
     // Simulate YouTrack ticket creation for local testing
-    const newTicketId = `${destinationProjectId}-SIM-${Math.floor(Math.random() * 10000)}`;
+    const newTicketId = `${destinationProjectId}-${Math.floor(Math.random() * 10000)}`;
 
     // Save the link and details in our local db file
     db.ticket_links.push({
